@@ -3,63 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Future AI - 3D Experience</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/gsap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/ScrollTrigger.min.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <title>3D Website</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        :root {
-            --primary: #FFD100;
-            --secondary: #6E00FF;
-            --accent: #00EEFF;
-            --dark: #0B0B1E;
-            --light: #F6F9FC;
-        }
-        
-        body, html {
+        * {
             margin: 0;
             padding: 0;
-            font-family: 'Poppins', sans-serif;
-            background-color: var(--dark);
-            color: var(--light);
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #050505;
+            color: #ffffff;
             overflow-x: hidden;
-            scroll-behavior: smooth;
         }
         
-        /* Loader */
-        .loader {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: var(--dark);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-        }
-        
-        .loader-content {
-            text-align: center;
-        }
-        
-        .loader-spinner {
-            width: 80px;
-            height: 80px;
-            border: 5px solid var(--accent);
-            border-radius: 50%;
-            border-top-color: var(--primary);
-            animation: spin 1s ease-in-out infinite;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
-        /* Canvas */
-        #canvas {
+        #canvas-container {
             position: fixed;
             top: 0;
             left: 0;
@@ -68,814 +28,408 @@
             z-index: -1;
         }
         
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        
-        ::-webkit-scrollbar-track {
-            background: var(--dark);
-        }
-        
-        ::-webkit-scrollbar-thumb {
-            background: var(--accent);
-            border-radius: 4px;
-        }
-        
-        /* Navigation */
         .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 5%;
             position: fixed;
-            top: 0;
-            left: 0;
             width: 100%;
+            top: 0;
             z-index: 100;
-            transition: all 0.5s ease;
-            padding: 1.5rem 0;
+            transition: background 0.3s ease;
         }
         
         .navbar.scrolled {
-            background: rgba(11, 11, 30, 0.8);
-            backdrop-filter: blur(10px);
-            padding: 0.8rem 0;
-            box-shadow: 0 5px 20px rgba(0, 238, 255, 0.1);
+            background: rgba(5, 5, 5, 0.9);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
         }
         
         .logo {
+            font-size: 2rem;
             font-weight: 700;
-            font-size: 1.8rem;
-            color: var(--primary);
-            text-shadow: 0 0 10px rgba(255, 209, 0, 0.5);
+            color: #ffffff;
+            text-decoration: none;
         }
         
-        .nav-link {
-            position: relative;
-            color: var(--light);
+        .logo span {
+            color: #4D9FFF;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+        
+        .nav-links a {
+            color: #ffffff;
+            text-decoration: none;
             font-weight: 500;
-            transition: all 0.3s ease;
-            padding: 0.5rem 1rem;
+            position: relative;
+            padding: 0.3rem 0;
         }
         
-        .nav-link:hover {
-            color: var(--primary);
-            text-shadow: 0 0 10px rgba(255, 209, 0, 0.5);
-        }
-        
-        .nav-link::after {
+        .nav-links a::after {
             content: '';
             position: absolute;
-            bottom: -4px;
-            left: 50%;
+            bottom: 0;
+            left: 0;
             width: 0;
             height: 2px;
-            background: var(--primary);
-            transition: all 0.3s ease;
-            transform: translateX(-50%);
+            background: #4D9FFF;
+            transition: width 0.3s ease;
         }
         
-        .nav-link:hover::after {
-            width: 70%;
-        }
-
-        /* Hero Section */
-        .hero {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            overflow: hidden;
-            padding-top: 5rem;
-        }
-        
-        .hero-content {
-            z-index: 2;
-            text-align: center;
-        }
-        
-        .hero-title {
-            font-size: 4rem;
-            font-weight: 800;
-            margin-bottom: 1.5rem;
-            line-height: 1.1;
-            text-shadow: 0 0 20px rgba(0, 238, 255, 0.3);
-        }
-        
-        .hero-subtitle {
-            font-size: 1.5rem;
-            font-weight: 400;
-            margin-bottom: 2.5rem;
-            opacity: 0.9;
-        }
-        
-        .hero-3d-container {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+        .nav-links a:hover::after {
             width: 100%;
-            height: 100%;
-            z-index: 1;
         }
         
-        /* CTA Button */
-        .cta-btn {
-            padding: 1rem 2.5rem;
-            background: linear-gradient(90deg, var(--primary), #FFA600);
-            color: var(--dark);
+        .cta-button {
+            background: #4D9FFF;
+            color: #ffffff;
+            padding: 0.8rem 1.5rem;
+            border-radius: 2rem;
+            text-decoration: none;
             font-weight: 600;
-            border-radius: 50px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
             transition: all 0.3s ease;
+        }
+        
+        .cta-button:hover {
+            background: #3a7ac5;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(77, 159, 255, 0.2);
+        }
+        
+        .hero {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 0 10%;
+        }
+        
+        .hero h1 {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+        }
+        
+        .hero p {
+            font-size: 1.2rem;
+            max-width: 600px;
+            margin-bottom: 2rem;
+            opacity: 0.8;
+        }
+        
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .secondary-button {
+            background: transparent;
+            color: #ffffff;
+            padding: 0.8rem 1.5rem;
+            border-radius: 2rem;
+            text-decoration: none;
+            font-weight: 600;
+            border: 2px solid #4D9FFF;
+            transition: all 0.3s ease;
+        }
+        
+        .secondary-button:hover {
+            background: rgba(77, 159, 255, 0.1);
+            transform: translateY(-3px);
+        }
+        
+        .highlight {
+            color: #4D9FFF;
+        }
+        
+        .features {
+            padding: 8rem 5% 5rem;
             position: relative;
-            overflow: hidden;
             z-index: 1;
-            border: none;
-            outline: none;
-            cursor: pointer;
-            box-shadow: 0 10px 20px rgba(255, 209, 0, 0.3);
-        }
-        
-        .cta-btn:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 25px rgba(255, 209, 0, 0.4);
-        }
-        
-        .cta-btn::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 0%;
-            height: 100%;
-            background: linear-gradient(90deg, #FFA600, var(--primary));
-            transition: all 0.3s ease;
-            z-index: -1;
-        }
-        
-        .cta-btn:hover::after {
-            width: 100%;
-        }
-        
-        /* Features Section */
-        .section {
-            padding: 8rem 0;
-            position: relative;
         }
         
         .section-title {
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 3rem;
             text-align: center;
-            color: var(--primary);
-            text-shadow: 0 0 15px rgba(255, 209, 0, 0.3);
+            margin-bottom: 4rem;
         }
         
-        .feature-card {
-            background: rgba(110, 0, 255, 0.1);
-            border-radius: 15px;
-            padding: 2rem;
-            transition: all 0.4s ease;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(0, 238, 255, 0.1);
-            height: 100%;
-            transform-style: preserve-3d;
-            perspective: 1000px;
-        }
-        
-        .feature-card:hover {
-            transform: translateY(-10px) rotateX(5deg) rotateY(5deg);
-            box-shadow: 0 20px 40px rgba(0, 238, 255, 0.2);
-            border-color: rgba(0, 238, 255, 0.3);
-        }
-        
-        .feature-icon {
+        .section-title h2 {
             font-size: 2.5rem;
-            margin-bottom: 1.5rem;
-            color: var(--accent);
-            background: linear-gradient(45deg, var(--accent), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        
-        .feature-title {
-            font-size: 1.5rem;
-            font-weight: 600;
             margin-bottom: 1rem;
-            color: var(--light);
         }
         
-        .feature-description {
+        .section-title p {
+            max-width: 800px;
+            margin: 0 auto;
             opacity: 0.8;
-            line-height: 1.6;
         }
         
-        /* AI Service Cards */
-        .service-cards {
+        .cards {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 2rem;
-            perspective: 1000px;
         }
         
-        .service-card {
-            position: relative;
+        .card {
+            background: rgba(15, 15, 15, 0.5);
             border-radius: 15px;
-            background: rgba(11, 11, 30, 0.7);
-            overflow: hidden;
-            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            border: 1px solid rgba(0, 238, 255, 0.1);
-            transform-style: preserve-3d;
-            transform: translateZ(0);
             padding: 2rem;
-            height: 300px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        .service-card:hover {
-            transform: rotateY(10deg) rotateX(10deg) scale(1.05);
-            box-shadow: 0 30px 60px rgba(110, 0, 255, 0.3);
-            border-color: var(--accent);
-            z-index: 5;
-        }
-        
-        .service-card::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: linear-gradient(45deg, transparent, rgba(0, 238, 255, 0.1), transparent);
-            transform: rotate(45deg);
-            transition: all 0.8s ease;
-            opacity: 0;
-        }
-        
-        .service-card:hover::before {
-            animation: shine 1.5s infinite;
-            opacity: 1;
-        }
-        
-        @keyframes shine {
-            0% {
-                top: -50%;
-                left: -50%;
-            }
-            100% {
-                top: 50%;
-                left: 50%;
-            }
-        }
-        
-        .service-card-icon {
-            font-size: 3rem;
-            margin-bottom: 1.5rem;
-            color: var(--primary);
-            transition: all 0.5s ease;
-        }
-        
-        .service-card:hover .service-card-icon {
-            transform: translateZ(30px);
-            text-shadow: 0 0 20px var(--primary);
-        }
-        
-        .service-card-title {
-            font-size: 1.8rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-            color: var(--light);
-            transition: all 0.5s ease;
-        }
-        
-        .service-card:hover .service-card-title {
-            transform: translateZ(20px);
-            color: var(--primary);
-        }
-        
-        .service-card-description {
-            opacity: 0.8;
-            text-align: center;
-            transition: all 0.5s ease;
-        }
-        
-        .service-card:hover .service-card-description {
-            transform: translateZ(15px);
-            opacity: 1;
-        }
-        
-        /* Timeline Section */
-        .timeline {
-            position: relative;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 4rem 0;
-        }
-        
-        .timeline::after {
-            content: '';
-            position: absolute;
-            width: 4px;
-            background-color: var(--accent);
-            top: 0;
-            bottom: 0;
-            left: 50%;
-            margin-left: -2px;
-            box-shadow: 0 0 15px var(--accent);
-        }
-        
-        .timeline-item {
-            padding: 1rem 3rem;
-            position: relative;
-            background: transparent;
-            width: 50%;
-        }
-        
-        .timeline-item:nth-child(odd) {
-            left: 0;
-        }
-        
-        .timeline-item:nth-child(even) {
-            left: 50%;
-        }
-        
-        .timeline-item::after {
-            content: '';
-            position: absolute;
-            width: 20px;
-            height: 20px;
-            right: -10px;
-            background-color: var(--dark);
-            border: 4px solid var(--primary);
-            top: 22px;
-            border-radius: 50%;
-            z-index: 1;
-            box-shadow: 0 0 15px var(--primary);
-        }
-        
-        .timeline-item:nth-child(odd)::after {
-            right: -10px;
-            left: unset;
-        }
-        
-        .timeline-item:nth-child(even)::after {
-            left: -10px;
-            right: unset;
-        }
-        
-        .timeline-content {
-            padding: 2rem;
-            background: rgba(110, 0, 255, 0.1);
-            border-radius: 10px;
-            border: 1px solid rgba(0, 238, 255, 0.1);
-            transition: all 0.4s ease;
-            backdrop-filter: blur(5px);
-        }
-        
-        .timeline-content:hover {
-            background: rgba(110, 0, 255, 0.2);
-            box-shadow: 0 15px 30px rgba(0, 238, 255, 0.15);
-        }
-        
-        .timeline-date {
-            color: var(--primary);
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-        
-        .timeline-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-        }
-        
-        /* Contact Section */
-        .contact-form {
-            max-width: 600px;
-            margin: 0 auto;
-            background: rgba(11, 11, 30, 0.7);
-            padding: 3rem;
-            border-radius: 15px;
-            border: 1px solid rgba(0, 238, 255, 0.1);
-            backdrop-filter: blur(10px);
-            transition: all 0.4s ease;
-        }
-        
-        .contact-form:hover {
-            border-color: rgba(0, 238, 255, 0.3);
-            box-shadow: 0 20px 40px rgba(0, 238, 255, 0.2);
-        }
-        
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-        
-        .form-label {
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            display: block;
-            color: var(--light);
-        }
-        
-        .form-control {
-            width: 100%;
-            padding: 1rem;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(0, 238, 255, 0.1);
-            border-radius: 5px;
-            color: var(--light);
-            transition: all 0.3s ease;
-        }
-        
-        .form-control:focus {
-            outline: none;
-            border-color: var(--accent);
-            box-shadow: 0 0 10px rgba(0, 238, 255, 0.3);
-            background: rgba(255, 255, 255, 0.08);
-        }
-        
-        textarea.form-control {
-            min-height: 120px;
-            resize: vertical;
-        }
-        
-        /* Footer */
-        .footer {
-            background: rgba(11, 11, 30, 0.9);
-            padding: 5rem 0 2rem;
-            position: relative;
-            z-index: 2;
-        }
-        
-        .footer-heading {
-            font-size: 1.8rem;
-            font-weight: 700;
-            margin-bottom: 1.5rem;
-            color: var(--primary);
-        }
-        
-        .footer-link {
-            color: var(--light);
-            opacity: 0.8;
-            transition: all 0.3s ease;
-            display: block;
-            margin-bottom: 0.8rem;
-        }
-        
-        .footer-link:hover {
-            color: var(--accent);
-            opacity: 1;
-            transform: translateX(5px);
-        }
-        
-        .social-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: rgba(0, 238, 255, 0.1);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 1rem;
-            transition: all 0.3s ease;
-            font-size: 1.2rem;
-            color: var(--light);
-        }
-        
-        .social-icon:hover {
-            background: var(--accent);
-            color: var(--dark);
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0, 238, 255, 0.2);
-        }
-        
-        .copyright {
-            text-align: center;
-            padding-top: 2rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            margin-top: 3rem;
-            opacity: 0.7;
-            font-size: 0.9rem;
-        }
-        
-        /* Particles effect */
-        .particles {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid rgba(77, 159, 255, 0.1);
             height: 100%;
-            z-index: -2;
-            pointer-events: none;
         }
         
-        /* Media Queries */
-        @media (max-width: 991px) {
-            .hero-title {
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(77, 159, 255, 0.1);
+        }
+        
+        .card-icon {
+            font-size: 2.5rem;
+            color: #4D9FFF;
+            margin-bottom: 1.5rem;
+        }
+        
+        .card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .card p {
+            opacity: 0.8;
+        }
+        
+        .footer {
+            background: rgba(10, 10, 10, 0.9);
+            padding: 3rem 5%;
+            text-align: center;
+        }
+        
+        .footer p {
+            opacity: 0.6;
+            margin-top: 1.5rem;
+        }
+        
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .social-links a {
+            color: #ffffff;
+            text-decoration: none;
+            font-size: 1.5rem;
+            opacity: 0.7;
+            transition: opacity 0.3s ease;
+        }
+        
+        .social-links a:hover {
+            opacity: 1;
+        }
+        
+        @media (max-width: 768px) {
+            .hero h1 {
                 font-size: 3rem;
             }
             
-            .hero-subtitle {
-                font-size: 1.2rem;
+            .nav-links {
+                display: none;
             }
-            
-            .timeline::after {
-                left: 31px;
-            }
-            
-            .timeline-item {
-                width: 100%;
-                padding-left: 70px;
-                padding-right: 25px;
-            }
-            
-            .timeline-item:nth-child(odd), 
-            .timeline-item:nth-child(even) {
-                left: 0;
-            }
-            
-            .timeline-item:nth-child(odd)::after, 
-            .timeline-item:nth-child(even)::after {
-                left: 22px;
-                right: unset;
-            }
-        }
-        
-        @media (max-width: 767px) {
-            .hero-title {
-                font-size: 2.5rem;
-            }
-            
-            .section-title {
-                font-size: 2rem;
-            }
-            
-            .navbar-collapse {
-                background: rgba(11, 11, 30, 0.9);
-                border-radius: 10px;
-                padding: 1rem;
-                backdrop-filter: blur(10px);
-            }
-        }
-
-        /* Scroll Indicator */
-        .scroll-indicator {
-            position: absolute;
-            bottom: 40px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            opacity: 0.8;
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-        
-        .scroll-indicator:hover {
-            opacity: 1;
-            transform: translateX(-50%) translateY(-5px);
-        }
-        
-        .scroll-indicator span {
-            font-size: 0.9rem;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-        
-        .scroll-indicator .mouse {
-            width: 30px;
-            height: 50px;
-            border: 2px solid var(--light);
-            border-radius: 20px;
-            display: flex;
-            justify-content: center;
-            padding-top: 10px;
-        }
-        
-        .scroll-indicator .mouse-wheel {
-            width: 4px;
-            height: 8px;
-            background: var(--light);
-            border-radius: 2px;
-            animation: scroll 1.5s infinite;
-        }
-        
-        @keyframes scroll {
-            0% {
-                transform: translateY(0);
-                opacity: 1;
-            }
-            100% {
-                transform: translateY(15px);
-                opacity: 0;
-            }
-        }
-        
-        /* Glow Effects */
-        .glow {
-            text-shadow: 0 0 10px var(--accent), 0 0 20px var(--accent), 0 0 30px var(--accent);
-        }
-        
-        .glow-box {
-            box-shadow: 0 0 20px var(--accent), 0 0 40px var(--accent);
         }
     </style>
 </head>
 <body>
-    <!-- Preloader -->
-    <div class="loader" id="preloader">
-        <div class="loader-content">
-            <div class="loader-spinner mx-auto mb-4"></div>
-            <h2>Loading Experience...</h2>
-        </div>
-    </div>
-
-    <!-- Three.js Canvas -->
-    <canvas id="canvas"></canvas>
+    <div id="canvas-container"></div>
     
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg">
-        <div class="container">
-            <a class="logo" href="#">Future<span style="color: var(--accent)">AI</span></a>
-            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon text-light">☰</span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ml-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="#home">Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#features">Features</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#services">AI Services</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#timeline">Roadmap</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#contact">Contact</a>
-                    </li>
-                </ul>
-            </div>
+    <nav class="navbar">
+        <a href="#" class="logo">Nova<span>Tech</span></a>
+        <div class="nav-links">
+            <a href="#">Home</a>
+            <a href="#">Products</a>
+            <a href="#">Services</a>
+            <a href="#">About</a>
+            <a href="#">Contact</a>
         </div>
+        <a href="#" class="cta-button">Get Started</a>
     </nav>
-
-    <!-- Hero Section -->
-    <section id="home" class="hero">
-        <div class="container">
-            <div class="hero-content">
-                <h1 class="hero-title">
-                    Next-Gen <span style="color: var(--primary)" class="glow">AI</span> Technology
-                    <br>For The <span style="color: var(--accent)">Future</span>
-                </h1>
-                <p class="hero-subtitle">Discover a revolutionary 3D AI platform powered by next-generation technology</p>
-                <button class="cta-btn">Get Started</button>
-            </div>
+    
+    <section class="hero">
+        <h1>Discover the <span class="highlight">Future</span> of Digital Innovation</h1>
+        <p>Cutting-edge solutions powered by advanced technologies to revolutionize your business and streamline your processes.</p>
+        <div class="hero-buttons">
+            <a href="#" class="cta-button">Explore Solutions</a>
+            <a href="#" class="secondary-button">Learn More</a>
         </div>
-        <div class="hero-3d-container" id="hero3d"></div>
-        <div class="scroll-indicator">
-            <span>Scroll Down</span>
-            <div class="mouse">
-                <div class="mouse-wheel"></div>
+    </section>
+    
+    <section class="features">
+        <div class="section-title">
+            <h2>Our <span class="highlight">Advanced</span> Features</h2>
+            <p>Experience the power of innovation with our suite of cutting-edge features designed to transform your digital presence.</p>
+        </div>
+        
+        <div class="cards">
+            <div class="card">
+                <div class="card-icon">⚡</div>
+                <h3>3D Visualization</h3>
+                <p>Immersive 3D visualization technology that brings your data and concepts to life with stunning clarity and interactivity.</p>
+            </div>
+            
+            <div class="card">
+                <div class="card-icon">🔮</div>
+                <h3>AI Integration</h3>
+                <p>Seamlessly integrate advanced artificial intelligence algorithms to optimize processes and enhance decision-making.</p>
+            </div>
+            
+            <div class="card">
+                <div class="card-icon">🛡️</div>
+                <h3>Secure Cloud Infrastructure</h3>
+                <p>Enterprise-grade security protocols ensuring your data remains protected while enabling global scalability.</p>
             </div>
         </div>
     </section>
-
-    <!-- Features Section -->
-    <section id="features" class="section">
-        <div class="container">
-            <h2 class="section-title">Revolutionary Features</h2>
-            <div class="row">
-                <div class="col-lg-4 col-md-6 mb-4">
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <i class="fas fa-brain"></i>
-                        </div>
-                        <h3 class="feature-title">Advanced AI Processing</h3>
-                        <p class="feature-description">Experience state-of-the-art AI algorithms designed to deliver lightning-fast processing and intelligent responses.</p>
-                    </div>
-                </div>
-                <div class="col-lg-4 col-md-6 mb-4">
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <i class="fas fa-vr-cardboard"></i>
-                        </div>
-                        <h3 class="feature-title">Immersive 3D Interface</h3>
-                        <p class="feature-description">Interact with our platform in a fully immersive 3D environment that responds to your every movement.</p>
-                    </div>
-                </div>
-                <div class="col-lg-4 col-md-6 mb-4">
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <i class="fas fa-bolt"></i>
-                        </div>
-                        <h3 class="feature-title">Real-time Responses</h3>
-                        <p class="feature-description">Get instant, real-time responses powered by our cutting-edge AI technology and optimized infrastructure.</p>
-                    </div>
-                </div>
-                <div class="col-lg-4 col-md-6 mb-4">
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <i class="fas fa-lock"></i>
-                        </div>
-                        <h3 class="feature-title">Secure & Private</h3>
-                        <p class="feature-description">Your data is protected with enterprise-grade security and privacy measures built into every layer.</p>
-                    </div>
-                </div>
-                <div class="col-lg-4 col-md-6 mb-4">
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <i class="fas fa-expand"></i>
-                        </div>
-                        <h3 class="feature-title">Scalable Solutions</h3>
-                        <p class="feature-description">Our platform scales effortlessly to meet your needs, from individual users to enterprise-level operations.</p>
-                    </div>
-                </div>
-                <div class="col-lg-4 col-md-6 mb-4">
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            <i class="fas fa-paint-brush"></i>
-                        </div>
-                        <h3 class="feature-title">Customizable Experience</h3>
-                        <p class="feature-description">Tailor the platform to your specific needs with extensive customization options and integrations.</p>
-                    </div>
-                </div>
-            </div>
+    
+    <footer class="footer">
+        <div class="social-links">
+            <a href="#">Facebook</a>
+            <a href="#">Twitter</a>
+            <a href="#">Instagram</a>
+            <a href="#">LinkedIn</a>
         </div>
-    </section>
-
-    <!-- AI Services Section -->
-    <section id="services" class="section">
-        <div class="container">
-            <h2 class="section-title">AI-Powered Services</h2>
-            <div class="service-cards">
-                <div class="service-card">
-                    <div class="service-card-icon">
-                        <i class="fas fa-comments"></i>
-                    </div>
-                    <h3 class="service-card-title">AI Chat</h3>
-                    <p class="service-card-description">Engage with our advanced conversational AI for natural, intelligent interactions.</p>
-                </div>
-                <div class="service-card">
-                    <div class="service-card-icon">
-                        <i class="fas fa-chart-line"></i>
-                    </div>
-                    <h3 class="service-card-title">Business Intelligence</h3>
-                    <p class="service-card-description">Transform your data into actionable insights with our AI-powered analytics.</p>
-                </div>
-                <div class="service-card">
-                    <div class="service-card-icon">
-                        <i class="fas fa-money-bill-wave"></i>
-                    </div>
-                    <h3 class="service-card-title">Financial AI</h3>
-                    <p class="service-card-description">Optimize financial decisions with predictive modeling and smart analysis.</p>
-                </div>
-                <div class="service-card">
-                    <div class="service-card-icon">
-                        <i class="fas fa-heartbeat"></i>
-                    </div>
-                    <h3 class="service-card-title">Health Analytics</h3>
-                    <p class="service-card-description">Advanced health monitoring and predictive analysis for better wellness.</p>
-                </div>
-                <div class="service-card">
-                    <div class="service-card-icon">
-                        <i class="fas fa-robot"></i>
-                    </div>
-                    <h3 class="service-card-title">Custom AI Solutions</h3>
-                    <p class="service-card-description">Tailored AI implementations designed for your unique business challenges.</p>
-                </div>
-                <div class="service-card">
-                    <div class="service-card-icon">
-                        <i class="fas fa-shield-alt"></i>
-                    </div>
-                    <h3 class="service-card-title">AI Security</h3>
-                    <p class="service-card-description">Protect your systems with AI-powered threat detection and prevention.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Timeline Section -->
-    <section id="timeline" class="section">
-        <div class="container">
-            <h2 class="section-title">Product Roadmap</h2>
-            <div class="timeline">
-                <div class="timeline-item">
-                    <div class="timeline-content">
-                        <div class="timeline-date">Q1 2025</div>
-                        <h3 class="timeline-title">Initial Launch</h3>
-                        <p>Introduction of core AI platform with basic 3D interface and fundamental services.</p>
-                    </div>
-                </div>
-                <div class="timeline-item">
-                    <div class="timeline-content">
-                        <div class="timeline-date">Q2 2025</div>
-                        <h3 class
+        <p>&copy; 2025 NovaTech. All rights reserved.</p>
+    </footer>
+    
+    <script>
+        // Initialize Three.js scene
+        let scene, camera, renderer;
+        let particles = [];
+        
+        function init() {
+            // Create scene
+            scene = new THREE.Scene();
+            
+            // Create camera
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.z = 50;
+            
+            // Create renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+            
+            // Create particles
+            const particleGeometry = new THREE.SphereGeometry(0.2, 24, 24);
+            const particleMaterial = new THREE.MeshBasicMaterial({ color: 0x4D9FFF });
+            
+            for (let i = 0; i < 200; i++) {
+                const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+                
+                // Random position
+                particle.position.x = Math.random() * 100 - 50;
+                particle.position.y = Math.random() * 100 - 50;
+                particle.position.z = Math.random() * 50 - 25;
+                
+                // Random movement speed
+                particle.velocity = new THREE.Vector3(
+                    Math.random() * 0.02 - 0.01,
+                    Math.random() * 0.02 - 0.01,
+                    Math.random() * 0.02 - 0.01
+                );
+                
+                scene.add(particle);
+                particles.push(particle);
+            }
+            
+            // Create lines between particles
+            createLines();
+            
+            // Handle window resize
+            window.addEventListener('resize', onWindowResize);
+            
+            // Handle scroll for navbar
+            window.addEventListener('scroll', handleScroll);
+            
+            // Start animation
+            animate();
+        }
+        
+        function createLines() {
+            const lineMaterial = new THREE.LineBasicMaterial({ 
+                color: 0x4D9FFF, 
+                transparent: true, 
+                opacity: 0.2 
+            });
+            
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    const distance = particles[i].position.distanceTo(particles[j].position);
+                    
+                    if (distance < 15) {
+                        const lineGeometry = new THREE.BufferGeometry().setFromPoints([
+                            particles[i].position,
+                            particles[j].position
+                        ]);
+                        
+                        const line = new THREE.Line(lineGeometry, lineMaterial);
+                        scene.add(line);
+                    }
+                }
+            }
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // Update particles
+            particles.forEach(particle => {
+                particle.position.add(particle.velocity);
+                
+                // Bounce off walls
+                if (Math.abs(particle.position.x) > 50) {
+                    particle.velocity.x = -particle.velocity.x;
+                }
+                
+                if (Math.abs(particle.position.y) > 50) {
+                    particle.velocity.y = -particle.velocity.y;
+                }
+                
+                if (Math.abs(particle.position.z) > 25) {
+                    particle.velocity.z = -particle.velocity.z;
+                }
+            });
+            
+            // Slowly rotate camera
+            camera.position.x = Math.sin(Date.now() * 0.0001) * 10;
+            camera.lookAt(scene.position);
+            
+            renderer.render(scene, camera);
+        }
+        
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        function handleScroll() {
+            const navbar = document.querySelector('.navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        }
+        
+        // Initialize the 3D scene when the page loads
+        window.onload = init;
+    </script>
+</body>
+</html>
