@@ -1,17 +1,691 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/galaxy-icon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Galaxy Chat Bot | AI-Powered Conversational Assistant</title>
-    <meta name="description" content="Experience the future of AI with Galaxy Chat Bot - a futuristic, high-tech 3D AI assistant with stunning animations and immersive visuals.">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
-</html>
+// File: pages/index.js
+import { useEffect, useRef, useState } from 'react';
+import Head from 'next/head';
+import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
+
+// Register GSAP plugins
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(ScrollTrigger);
+}
+
+export default function Home() {
+  const containerRef = useRef(null);
+  const canvasRef = useRef(null);
+  const [loaded, setLoaded] = useState(false);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [scrollPosition, setScrollPosition] = useState(0);
+  
+  // Track mouse position
+  useEffect(() => {
+    const handleMouseMove = (event) => {
+      setMousePosition({
+        x: (event.clientX / window.innerWidth) * 2 - 1,
+        y: -(event.clientY / window.innerHeight) * 2 + 1
+      });
+    };
+    
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, []);
+  
+  // Track scroll position
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollPosition(window.scrollY);
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+  
+  // Set up Three.js scene
+  useEffect(() => {
+    if (!canvasRef.current || typeof window === 'undefined') return;
+    
+    // Scene setup
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ 
+      canvas: canvasRef.current,
+      alpha: true,
+      antialias: true 
+    });
+    
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0x404040, 2);
+    scene.add(ambientLight);
+    
+    const pointLight1 = new THREE.PointLight(0x3498db, 2); // Blue
+    pointLight1.position.set(5, 5, 5);
+    scene.add(pointLight1);
+    
+    const pointLight2 = new THREE.PointLight(0x9b59b6, 2); // Purple
+    pointLight2.position.set(-5, -5, 5);
+    scene.add(pointLight2);
+    
+    // 3D Planet/Orb
+    const geometry = new THREE.SphereGeometry(2, 64, 64);
+    
+    // Create more interesting material with gradient and glow
+    const vertexShader = `
+      varying vec2 vUv;
+      varying vec3 vNormal;
+      
+      void main() {
+        vUv = uv;
+        vNormal = normalize(normalMatrix * normal);
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `;
+    
+    const fragmentShader = `
+      uniform float time;
+      varying vec2 vUv;
+      varying vec3 vNormal;
+      
+      void main() {
+        // Create a gradient effect
+        float intensity = pow(0.7 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.0);
+        vec3 color1 = vec3(0.1, 0.5, 1.0); // Blue
+        vec3 color2 = vec3(0.8, 0.1, 0.8); // Purple
+        
+        // Time-based color shift
+        float shift = sin(time * 0.5) * 0.5 + 0.5;
+        vec3 glowColor = mix(color1, color2, shift);
+        
+        // Add noise pattern
+        float noise = sin(vUv.x * 20.0 + time) * sin(vUv.y * 20.0 + time) * 0.1;
+        
+        gl_FragColor = vec4(glowColor + noise, 1.0) * (intensity + 0.5);
+      }
+    `;
+    
+    const customMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        time: { value: 0 }
+      },
+      vertexShader: vertexShader,
+      fragmentShader: fragmentShader,
+      transparent: true
+    });
+    
+    const sphere = new THREE.Mesh(geometry, customMaterial);
+    scene.add(sphere);
+    
+    // Add atmosphere glow
+    const atmosphereGeometry = new THREE.SphereGeometry(2.2, 64, 64);
+    const atmosphereMaterial = new THREE.ShaderMaterial({
+      uniforms: {},
+      vertexShader: `
+        varying vec3 vNormal;
+        void main() {
+          vNormal = normalize(normalMatrix * normal);
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        varying vec3 vNormal;
+        void main() {
+          float intensity = pow(0.7 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.0);
+          gl_FragColor = vec4(0.3, 0.6, 1.0, 1.0) * intensity;
+        }
+      `,
+      side: THREE.BackSide,
+      blending: THREE.AdditiveBlending,
+      transparent: true
+    });
+    
+    const atmosphere = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
+    scene.add(atmosphere);
+    
+    // Particle system for background
+    const particlesGeometry = new THREE.BufferGeometry();
+    const particlesCount = 5000;
+    const particlePositions = new Float32Array(particlesCount * 3);
+    const particleSizes = new Float32Array(particlesCount);
+    
+    for (let i = 0; i < particlesCount * 3; i++) {
+      particlePositions[i] = (Math.random() - 0.5) * 100;
+    }
+    
+    for (let i = 0; i < particlesCount; i++) {
+      particleSizes[i] = Math.random() * 0.5 + 0.1;
+    }
+    
+    particlesGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+    particlesGeometry.setAttribute('size', new THREE.BufferAttribute(particleSizes, 1));
+    
+    const particleVertexShader = `
+      attribute float size;
+      varying vec3 vColor;
+      
+      void main() {
+        vColor = vec3(0.8 + size * 0.2, 0.8 + size * 0.1, 1.0); // Slightly different colors
+        
+        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+        gl_PointSize = size * (300.0 / -mvPosition.z);
+        gl_Position = projectionMatrix * mvPosition;
+      }
+    `;
+    
+    const particleFragmentShader = `
+      varying vec3 vColor;
+      
+      void main() {
+        // Create a circular particle
+        float r = 0.5;
+        vec2 cxy = 2.0 * gl_PointCoord - 1.0;
+        if (dot(cxy, cxy) > r * r) discard;
+        
+        gl_FragColor = vec4(vColor, 1.0);
+      }
+    `;
+    
+    const particlesMaterial = new THREE.ShaderMaterial({
+      vertexShader: particleVertexShader,
+      fragmentShader: particleFragmentShader,
+      blending: THREE.AdditiveBlending,
+      depthTest: false,
+      transparent: true,
+      vertexColors: true
+    });
+    
+    const particles = new THREE.Points(particlesGeometry, particlesMaterial);
+    scene.add(particles);
+    
+    // Position camera
+    camera.position.z = 6;
+    
+    // Animation
+    const clock = new THREE.Clock();
+    
+    const animate = () => {
+      const elapsedTime = clock.getElapsedTime();
+      
+      // Update custom shader time uniform
+      customMaterial.uniforms.time.value = elapsedTime;
+      
+      // Rotate sphere based on mouse position
+      sphere.rotation.y += 0.005;
+      sphere.rotation.x += 0.002;
+      
+      // Add additional rotation based on mouse position
+      sphere.rotation.x += mousePosition.y * 0.01;
+      sphere.rotation.y += mousePosition.x * 0.01;
+      
+      // Match atmosphere rotation to sphere
+      atmosphere.rotation.copy(sphere.rotation);
+      
+      // Rotate particles
+      particles.rotation.y += 0.0005;
+      
+      // Move lights in a circular pattern
+      const time = elapsedTime;
+      pointLight1.position.x = Math.sin(time) * 5;
+      pointLight1.position.z = Math.cos(time) * 5;
+      pointLight2.position.x = Math.sin(time + Math.PI) * 5;
+      pointLight2.position.z = Math.cos(time + Math.PI) * 5;
+      
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    };
+    
+    animate();
+    
+    // Handle resize
+    const handleResize = () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    
+    // GSAP Animations
+    gsap.fromTo(
+      sphere.scale,
+      { x: 0, y: 0, z: 0 },
+      {
+        x: 1,
+        y: 1,
+        z: 1,
+        duration: 1.5,
+        ease: "elastic.out(1, 0.5)",
+        onComplete: () => setLoaded(true)
+      }
+    );
+    
+    gsap.fromTo(
+      atmosphere.scale,
+      { x: 0, y: 0, z: 0 },
+      {
+        x: 1,
+        y: 1,
+        z: 1,
+        duration: 1.5,
+        ease: "elastic.out(1, 0.5)"
+      }
+    );
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      
+      // Clean up Three.js resources
+      scene.dispose();
+      geometry.dispose();
+      customMaterial.dispose();
+      atmosphereGeometry.dispose();
+      atmosphereMaterial.dispose();
+      particlesGeometry.dispose();
+      particlesMaterial.dispose();
+    };
+  }, []);
+  
+  // GSAP Scroll animations
+  useEffect(() => {
+    if (!loaded) return;
+    
+    // Hero title animation
+    gsap.fromTo(
+      '.hero-title',
+      { opacity: 0, y: 100 },
+      {
+        opacity: 1,
+        y: 0,
+        duration: 1,
+        ease: "power3.out"
+      }
+    );
+    
+    // Hero subtitle animation
+    gsap.fromTo(
+      '.hero-subtitle',
+      { opacity: 0, y: 50 },
+      {
+        opacity: 1,
+        y: 0,
+        duration: 1,
+        delay: 0.3,
+        ease: "power2.out"
+      }
+    );
+    
+    // CTA button animation
+    gsap.fromTo(
+      '.cta-button',
+      { opacity: 0, scale: 0.8 },
+      {
+        opacity: 1,
+        scale: 1,
+        duration: 0.8,
+        delay: 0.6,
+        ease: "back.out(1.7)"
+      }
+    );
+    
+    // AI Service Cards animations
+    ScrollTrigger.batch('.service-card', {
+      start: 'top bottom-=10%',
+      onEnter: (batch) => {
+        gsap.fromTo(
+          batch,
+          { opacity: 0, y: 100, rotationX: -30 },
+          {
+            opacity: 1,
+            y: 0,
+            rotationX: 0,
+            duration: 0.8,
+            stagger: 0.2,
+            ease: "power2.out"
+          }
+        );
+      },
+      once: true
+    });
+    
+    // Features section animation
+    ScrollTrigger.batch('.feature-item', {
+      start: 'top bottom-=10%',
+      onEnter: (batch) => {
+        gsap.fromTo(
+          batch,
+          { opacity: 0, x: -50 },
+          {
+            opacity: 1,
+            x: 0,
+            duration: 0.8,
+            stagger: 0.2,
+            ease: "power2.out"
+          }
+        );
+      },
+      once: true
+    });
+    
+    // Contact section animation
+    ScrollTrigger.create({
+      trigger: '.contact-section',
+      start: 'top bottom-=20%',
+      onEnter: () => {
+        gsap.fromTo(
+          '.contact-content',
+          { opacity: 0, y: 50 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.8,
+            ease: "power2.out"
+          }
+        );
+      },
+      once: true
+    });
+    
+  }, [loaded]);
+  
+  return (
+    <div className="min-h-screen bg-yellow-400 text-white" ref={containerRef}>
+      <Head>
+        <title>Futuristic 3D AI Landing Page</title>
+        <meta name="description" content="A stunning 3D interactive landing page showcasing AI innovation" />
+        <link rel="icon" href="/favicon.ico" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+      </Head>
+      
+      {/* Fixed canvas for 3D background */}
+      <canvas 
+        ref={canvasRef}
+        className="fixed top-0 left-0 w-full h-full pointer-events-none"
+      />
+      
+      {/* Hero Section */}
+      <section className="relative h-screen flex flex-col justify-center items-center px-4 overflow-hidden">
+        <div className="text-center z-10 max-w-4xl mx-auto">
+          <h1 className="hero-title text-5xl md:text-7xl font-bold mb-6 text-white opacity-0">
+            AI-Powered <span className="text-cyan-400">Future</span>
+          </h1>
+          <p className="hero-subtitle text-xl md:text-2xl mb-8 text-white opacity-0">
+            Experience the next generation of intelligent technology with our innovative AI solutions
+          </p>
+          <button className="cta-button px-8 py-4 bg-purple-600 hover:bg-purple-700 text-white rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-105 opacity-0 relative overflow-hidden">
+            <span className="relative z-10">Explore Our Solutions</span>
+          </button>
+        </div>
+      </section>
+      
+      {/* AI Services Section */}
+      <section className="relative py-24 px-4 bg-black bg-opacity-30 backdrop-filter backdrop-blur-lg">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-4xl md:text-5xl font-bold mb-16 text-center text-white">
+            Our <span className="text-cyan-400">AI</span> Services
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[
+              { title: "AI Chat Assistant", icon: "💬", desc: "Intelligent conversational AI that understands context and learns from interactions." },
+              { title: "Business Analytics", icon: "📊", desc: "Advanced data analysis and actionable insights for your business growth." },
+              { title: "Financial Forecasting", icon: "📈", desc: "Predictive modeling for financial markets using cutting-edge algorithms." },
+              { title: "Healthcare Solutions", icon: "🏥", desc: "AI-driven diagnostics and personalized healthcare recommendations." },
+              { title: "Smart Automation", icon: "⚙️", desc: "Streamline your workflows with intelligent process automation." },
+              { title: "Security & Privacy", icon: "🔒", desc: "Next-generation protection powered by behavioral AI systems." }
+            ].map((service, index) => (
+              <div 
+                key={index}
+                className="service-card bg-black bg-opacity-30 rounded-xl p-6 transform transition-all duration-500 hover:scale-105 hover:bg-opacity-50"
+              >
+                <div className="text-4xl mb-4">{service.icon}</div>
+                <h3 className="text-xl font-bold mb-2 text-cyan-400">{service.title}</h3>
+                <p className="text-gray-100">{service.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+      
+      {/* Features Highlight Section */}
+      <section className="relative py-24 px-4">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-4xl md:text-5xl font-bold mb-16 text-center text-white">
+            <span className="text-purple-500">Advanced</span> Features
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+            <div className="feature-item bg-black bg-opacity-20 p-8 rounded-xl backdrop-filter backdrop-blur-md">
+              <h3 className="text-2xl font-bold mb-4 text-cyan-400">Real-Time Processing</h3>
+              <p className="text-gray-100 mb-6">
+                Our sophisticated algorithms process vast amounts of data in real-time, providing instant insights and responses.
+              </p>
+              <div className="w-full h-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"></div>
+            </div>
+            
+            <div className="feature-item bg-black bg-opacity-20 p-8 rounded-xl backdrop-filter backdrop-blur-md">
+              <h3 className="text-2xl font-bold mb-4 text-cyan-400">Adaptive Learning</h3>
+              <p className="text-gray-100 mb-6">
+                Our AI continuously improves through machine learning, adapting to your specific needs and preferences over time.
+              </p>
+              <div className="w-full h-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"></div>
+            </div>
+            
+            <div className="feature-item bg-black bg-opacity-20 p-8 rounded-xl backdrop-filter backdrop-blur-md">
+              <h3 className="text-2xl font-bold mb-4 text-cyan-400">Intuitive Interface</h3>
+              <p className="text-gray-100 mb-6">
+                Designed with user experience in mind, our platform offers a seamless and intuitive interface for all users.
+              </p>
+              <div className="w-full h-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"></div>
+            </div>
+            
+            <div className="feature-item bg-black bg-opacity-20 p-8 rounded-xl backdrop-filter backdrop-blur-md">
+              <h3 className="text-2xl font-bold mb-4 text-cyan-400">Enterprise Security</h3>
+              <p className="text-gray-100 mb-6">
+                Bank-level encryption and advanced security measures ensure your data remains protected at all times.
+              </p>
+              <div className="w-full h-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      {/* Contact Section */}
+      <section className="relative py-24 px-4 bg-black bg-opacity-30 backdrop-filter backdrop-blur-lg contact-section">
+        <div className="max-w-4xl mx-auto contact-content opacity-0">
+          <h2 className="text-4xl md:text-5xl font-bold mb-12 text-center text-white">
+            Ready to <span className="text-cyan-400">Get Started</span>?
+          </h2>
+          
+          <form className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="form-group">
+                <input 
+                  type="text" 
+                  placeholder="Your Name" 
+                  className="w-full px-4 py-3 bg-black bg-opacity-50 border border-purple-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 transition-all"
+                />
+              </div>
+              <div className="form-group">
+                <input 
+                  type="email" 
+                  placeholder="Your Email" 
+                  className="w-full px-4 py-3 bg-black bg-opacity-50 border border-purple-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 transition-all"
+                />
+              </div>
+            </div>
+            
+            <div className="form-group">
+              <textarea 
+                placeholder="Your Message" 
+                rows="4" 
+                className="w-full px-4 py-3 bg-black bg-opacity-50 border border-purple-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 transition-all"
+              ></textarea>
+            </div>
+            
+            <div className="text-center">
+              <button 
+                type="submit" 
+                className="px-8 py-4 bg-cyan-500 hover:bg-cyan-600 text-white rounded-full font-bold text-lg transition-all duration-300 transform hover:scale-105 relative overflow-hidden"
+              >
+                <span className="relative z-10">Send Message</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+      
+      {/* Footer */}
+      <footer className="py-8 px-4 text-center text-white bg-black bg-opacity-40">
+        <p>© {new Date().getFullYear()} AI Future. All rights reserved.</p>
+      </footer>
+      
+      {/* Global Styles */}
+      <style jsx global>{`
+        :root {
+          --primary-yellow: #f7df1e;
+          --primary-blue: #3498db;
+          --primary-cyan: #00d8ff;
+          --primary-purple: #9b59b6;
+          --dark-bg: #111;
+        }
+        
+        html,
+        body {
+          padding: 0;
+          margin: 0;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+            Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+          background-color: var(--primary-yellow);
+          color: white;
+          overflow-x: hidden;
+        }
+        
+        /* Enhanced Glow Effects */
+        .hero-title {
+          text-shadow: 0 0 10px rgba(0, 216, 255, 0.7), 0 0 20px rgba(0, 216, 255, 0.5);
+          animation: pulse 3s infinite alternate;
+        }
+        
+        .cta-button {
+          position: relative;
+          z-index: 1;
+          box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+        }
+        
+        .cta-button:hover {
+          box-shadow: 0 0 25px rgba(0, 255, 255, 0.8);
+        }
+        
+        .cta-button::before {
+          content: '';
+          position: absolute;
+          top: -2px;
+          left: -2px;
+          right: -2px;
+          bottom: -2px;
+          background: linear-gradient(45deg, var(--primary-blue), var(--primary-purple), var(--primary-cyan));
+          z-index: -1;
+          filter: blur(10px);
+          opacity: 0;
+          transition: opacity 0.3s ease;
+        }
+        
+        .cta-button:hover::before {
+          opacity: 1;
+        }
+        
+        /* Card hover effects */
+        .service-card {
+          transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+          position: relative;
+          z-index: 1;
+        }
+        
+        .service-card::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: inherit;
+          background: linear-gradient(45deg, var(--primary-blue), var(--primary-purple));
+          opacity: 0;
+          z-index: -1;
+          transition: opacity 0.4s ease;
+        }
+        
+        .service-card:hover::before {
+          opacity: 0.2;
+        }
+        
+        .service-card:hover {
+          box-shadow: 0 0 15px rgba(138, 43, 226, 0.6);
+        }
+        
+        /* Animations */
+        @keyframes pulse {
+          0% {
+            text-shadow: 0 0 10px rgba(0, 216, 255, 0.7), 0 0 20px rgba(0, 216, 255, 0.5);
+          }
+          100% {
+            text-shadow: 0 0 15px rgba(0, 216, 255, 0.9), 0 0 30px rgba(0, 216, 255, 0.7), 0 0 40px rgba(0, 216, 255, 0.5);
+          }
+        }
+        
+        @keyframes float {
+          0% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-10px);
+          }
+          100% {
+            transform: translateY(0px);
+          }
+        }
+        
+        /* Form element styling */
+        input, textarea {
+          transition: all 0.3s ease;
+        }
+        
+        input:focus, textarea:focus {
+          transform: scale(1.02);
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+          width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+          background: rgba(0, 0, 0, 0.2);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+          background: linear-gradient(to bottom, var(--primary-blue), var(--primary-purple));
+          border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(to bottom, #2980b9, #8e44ad);
+        }
+        
+        /* Mobile optimization */
+        @media (max-width: 768px) {
+          .hero-title {
+            text-shadow: 0 0 5px rgba(0, 216, 255, 0.7);
+          }
+          
+          .service-card:hover {
+            transform: scale(1.03);
+          }
+        }
+      `}</style>
+    </div>
+  );
+}
