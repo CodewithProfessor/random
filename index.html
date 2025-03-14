@@ -1,838 +1,667 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive 3D Experience</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.7.1/gsap.min.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        :root {
-            --background: #121212;
-            --text: #ffffff;
-            --ui-background: rgba(30, 30, 30, 0.7);
-            --ui-accent: #6366f1;
-            --ui-text: #ffffff;
-        }
-        
-        body.light-mode {
-            --background: #f5f5f5;
-            --text: #121212;
-            --ui-background: rgba(240, 240, 240, 0.7);
-            --ui-accent: #4f46e5;
-            --ui-text: #121212;
-        }
-        
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: var(--background);
-            color: var(--text);
-            transition: background-color 0.3s, color 0.3s;
-            overflow: hidden;
-        }
-        
-        #canvas-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-        }
-        
-        #loading-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: var(--background);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-            transition: opacity 0.5s;
-        }
-        
-        .loading-bar {
-            width: 250px;
-            height: 8px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            overflow: hidden;
-            margin: 20px 0;
-        }
-        
-        .loading-progress {
-            height: 100%;
-            width: 0%;
-            background: var(--ui-accent);
-            border-radius: 8px;
-            transition: width 0.3s;
-        }
-        
-        .loading-text {
-            font-size: 18px;
-            color: var(--text);
-            margin-bottom: 10px;
-        }
-        
-        #ui-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            z-index: 10;
-            padding: 16px;
-            display: flex;
-            justify-content: space-between;
-            pointer-events: none;
-        }
-        
-        .ui-panel {
-            background: var(--ui-background);
-            backdrop-filter: blur(10px);
-            border-radius: 12px;
-            padding: 16px;
-            pointer-events: auto;
-        }
-        
-        .title-panel {
-            margin-right: auto;
-            margin-left: 10px;
-            padding-left: 24px;
-            padding-right: 24px;
-        }
-        
-        .title-panel h1 {
-            font-size: 18px;
-            font-weight: 600;
-            margin: 0;
-        }
-        
-        .controls-panel {
-            display: flex;
-            gap: 8px;
-        }
-        
-        button {
-            background: var(--ui-accent);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 8px 16px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: transform 0.15s, background-color 0.2s;
-        }
-        
-        button:hover {
-            transform: translateY(-2px);
-        }
-        
-        button:active {
-            transform: translateY(0);
-        }
-        
-        .info-panel {
-            position: fixed;
-            bottom: 24px;
-            left: 24px;
-            max-width: 320px;
-            z-index: 10;
-            pointer-events: auto;
-        }
-        
-        .help-panel {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            z-index: 10;
-            pointer-events: auto;
-        }
-        
-        .help-panel p {
-            margin-top: 8px;
-            font-size: 14px;
-            opacity: 0.8;
-        }
-        
-        @media (max-width: 768px) {
-            .title-panel {
-                display: none;
-            }
-            
-            .info-panel {
-                bottom: 16px;
-                left: 16px;
-                max-width: calc(100% - 32px);
-            }
-            
-            .help-panel {
-                bottom: 16px;
-                right: 16px;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive 3D Experience</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      overflow: hidden;
+      transition: background-color 0.5s ease, color 0.5s ease;
+    }
+
+    body.light-mode {
+      background-color: #f5f5f5;
+      color: #333;
+    }
+
+    body.dark-mode {
+      background-color: #121212;
+      color: #f5f5f5;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    #loading-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+      color: white;
+      transition: opacity 0.5s ease;
+    }
+
+    .loader {
+      width: 50px;
+      height: 50px;
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid #3498db;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .ui-container {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .toggle-btn {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 30px;
+      padding: 10px 20px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .toggle-btn:hover {
+      background-color: #2980b9;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .toggle-btn svg {
+      margin-right: 8px;
+    }
+
+    .instruction {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      color: inherit;
+      font-size: 14px;
+      background-color: rgba(0, 0, 0, 0.5);
+      padding: 10px 20px;
+      border-radius: 8px;
+      opacity: 0.7;
+      transition: opacity 0.3s ease;
+    }
+
+    .instruction:hover {
+      opacity: 1;
+    }
+
+    .instruction.light-mode {
+      background-color: rgba(255, 255, 255, 0.7);
+      color: #333;
+    }
+
+    .instruction.dark-mode {
+      background-color: rgba(0, 0, 0, 0.7);
+      color: #f5f5f5;
+    }
+
+    .tooltip {
+      position: absolute;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      z-index: 100;
+    }
+
+    .tooltip.light-mode {
+      background-color: rgba(255, 255, 255, 0.9);
+      color: #333;
+    }
+
+    @media (max-width: 768px) {
+      .ui-container {
+        top: 10px;
+        right: 10px;
+      }
+
+      .toggle-btn {
+        padding: 8px 16px;
+        font-size: 12px;
+      }
+
+      .instruction {
+        font-size: 12px;
+        bottom: 10px;
+        left: 10px;
+      }
+    }
+  </style>
 </head>
-<body>
-    <div id="loading-screen">
-        <div class="loading-text">Loading 3D Experience</div>
-        <div class="loading-bar">
-            <div class="loading-progress" id="loading-progress"></div>
-        </div>
-        <div class="loading-text" id="loading-percentage">0%</div>
-    </div>
-    
-    <div id="canvas-container"></div>
-    
-    <div id="ui-container">
-        <div class="ui-panel title-panel">
-            <h1>3D Experience</h1>
-        </div>
-        <div class="ui-panel controls-panel">
-            <button id="toggle-mode">Dark Mode</button>
-            <button id="toggle-animation">Pause</button>
-        </div>
-    </div>
-    
-    <div class="ui-panel info-panel">
-        <h2>Interactive 3D Website</h2>
-        <p>A modern, high-performance 3D experience built with Three.js.</p>
-    </div>
-    
-    <div class="ui-panel help-panel">
-        <h3>Controls</h3>
-        <p>👆 Touch or click to rotate</p>
-        <p>👌 Pinch or scroll to zoom</p>
-        <p>✌️ Two fingers to pan</p>
-    </div>
-    
-    <script>
-        // -------------------- INITIALIZATION --------------------
-        
-        // Scene setup
-        const scene = new THREE.Scene();
-        let renderer, camera, controls;
-        let mixer, clock;
-        const objects = [];
-        const textureLoader = new THREE.TextureLoader();
-        
-        // Configuration
-        let isDarkMode = true;
-        let isAnimating = true;
-        const isMobile = window.innerWidth < 768;
-        
-        // DOM elements
-        const loadingScreen = document.getElementById('loading-screen');
-        const loadingProgress = document.getElementById('loading-progress');
-        const loadingPercentage = document.getElementById('loading-percentage');
-        const toggleModeButton = document.getElementById('toggle-mode');
-        const toggleAnimationButton = document.getElementById('toggle-animation');
-        const canvasContainer = document.getElementById('canvas-container');
-        
-        // Setup loading manager
-        const manager = new THREE.LoadingManager();
-        manager.onProgress = function(url, itemsLoaded, itemsTotal) {
-            const progress = (itemsLoaded / itemsTotal) * 100;
-            loadingProgress.style.width = progress + '%';
-            loadingPercentage.textContent = Math.round(progress) + '%';
-        };
-        
-        manager.onLoad = function() {
-            setTimeout(() => {
-                loadingScreen.style.opacity = 0;
-                setTimeout(() => {
-                    loadingScreen.style.display = 'none';
-                }, 500);
-            }, 500);
-        };
-        
-        // Initialize scene, camera, renderer, controls
-        function init() {
-            // Clock for animations
-            clock = new THREE.Clock();
-            
-            // Scene
-            scene.background = new THREE.Color(isDarkMode ? 0x121212 : 0xf5f5f5);
-            
-            // Camera
-            const aspect = window.innerWidth / window.innerHeight;
-            camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 100);
-            camera.position.set(0, 1, 5);
-            
-            // Renderer
-            renderer = new THREE.WebGLRenderer({ antialias: !isMobile });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            renderer.shadowMap.enabled = true;
-            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-            renderer.outputEncoding = THREE.sRGBEncoding;
-            canvasContainer.appendChild(renderer.domElement);
-            
-            // Controls
-            controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;
-            controls.dampingFactor = 0.05;
-            controls.screenSpacePanning = false;
-            controls.minDistance = 2;
-            controls.maxDistance = 10;
-            controls.maxPolarAngle = Math.PI / 1.5;
-            
-            // Responsive
-            window.addEventListener('resize', onWindowResize);
-            
-            // Event listeners
-            toggleModeButton.addEventListener('click', toggleMode);
-            toggleAnimationButton.addEventListener('click', toggleAnimation);
-            
-            // Add objects and lights
-            setupLighting();
-            createObjects();
-            
-            // Start animation loop
-            animate();
-        }
-        
-        // -------------------- LIGHTING --------------------
-        
-        function setupLighting() {
-            // Main ambient light
-            const ambientLight = new THREE.AmbientLight(
-                isDarkMode ? 0x404040 : 0x606060, 
-                isDarkMode ? 0.5 : 0.7
-            );
-            scene.add(ambientLight);
-            
-            // Main directional light (sun-like)
-            const mainLight = new THREE.DirectionalLight(
-                isDarkMode ? 0xffffff : 0xffffff, 
-                isDarkMode ? 0.7 : 0.5
-            );
-            mainLight.position.set(5, 10, 7);
-            mainLight.castShadow = true;
-            
-            // Optimize shadow settings
-            mainLight.shadow.mapSize.width = 1024;
-            mainLight.shadow.mapSize.height = 1024;
-            mainLight.shadow.camera.near = 0.5;
-            mainLight.shadow.camera.far = 30;
-            mainLight.shadow.camera.left = -10;
-            mainLight.shadow.camera.right = 10;
-            mainLight.shadow.camera.top = 10;
-            mainLight.shadow.camera.bottom = -10;
-            mainLight.shadow.bias = -0.0001;
-            
-            scene.add(mainLight);
-            
-            // Add accent lights for more visual interest
-            const frontLight = new THREE.PointLight(
-                isDarkMode ? 0x6366f1 : 0x4f46e5, 
-                isDarkMode ? 1 : 0.7, 
-                15
-            );
-            frontLight.position.set(0, 2, 3);
-            scene.add(frontLight);
-            
-            const backLight = new THREE.PointLight(
-                isDarkMode ? 0xec4899 : 0xd946ef, 
-                isDarkMode ? 1 : 0.7, 
-                15
-            );
-            backLight.position.set(-2, 1, -3);
-            scene.add(backLight);
-        }
-        
-        // -------------------- 3D OBJECTS --------------------
-        
-        function createObjects() {
-            // Create ground plane
-            const groundGeometry = new THREE.PlaneGeometry(20, 20);
-            const groundMaterial = new THREE.MeshStandardMaterial({
-                color: isDarkMode ? 0x222222 : 0xdddddd,
-                roughness: 0.8,
-                metalness: 0.2,
-                side: THREE.DoubleSide
-            });
-            const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-            ground.rotation.x = -Math.PI / 2;
-            ground.position.y = -1;
-            ground.receiveShadow = true;
-            scene.add(ground);
-            
-            // Create geometries with different complexity based on device
-            const torusKnotGeometry = new THREE.TorusKnotGeometry(
-                0.7, 0.3, isMobile ? 64 : 128, isMobile ? 16 : 32
-            );
-            const sphereGeometry = new THREE.SphereGeometry(
-                0.5, isMobile ? 16 : 32, isMobile ? 16 : 32
-            );
-            const boxGeometry = new THREE.BoxGeometry(0.8, 0.8, 0.8);
-            
-            // Create shared material
-            const material1 = new THREE.MeshStandardMaterial({
-                color: 0x6366f1,
-                roughness: 0.3,
-                metalness: 0.7,
-                emissive: 0x6366f1,
-                emissiveIntensity: 0.2
-            });
-            
-            const material2 = new THREE.MeshStandardMaterial({
-                color: 0xec4899,
-                roughness: 0.5,
-                metalness: 0.5,
-                emissive: 0xec4899,
-                emissiveIntensity: 0.1
-            });
-            
-            const material3 = new THREE.MeshStandardMaterial({
-                color: 0x10b981,
-                roughness: 0.7,
-                metalness: 0.3,
-                emissive: 0x10b981,
-                emissiveIntensity: 0.05
-            });
-            
-            // Create meshes
-            const torusKnot = new THREE.Mesh(torusKnotGeometry, material1);
-            torusKnot.position.set(0, 0.5, 0);
-            torusKnot.castShadow = true;
-            scene.add(torusKnot);
-            objects.push({ mesh: torusKnot, rotationSpeed: 0.002, floatSpeed: 0.5 });
-            
-            const sphere = new THREE.Mesh(sphereGeometry, material2);
-            sphere.position.set(-1.5, 0.5, -1);
-            sphere.castShadow = true;
-            scene.add(sphere);
-            objects.push({ mesh: sphere, rotationSpeed: 0.003, floatSpeed: 0.7 });
-            
-            const box = new THREE.Mesh(boxGeometry, material3);
-            box.position.set(1.5, 0.5, -1);
-            box.castShadow = true;
-            scene.add(box);
-            objects.push({ mesh: box, rotationSpeed: 0.001, floatSpeed: 0.3 });
-            
-            // Add particle system for visual effect
-            const particlesGeometry = new THREE.BufferGeometry();
-            const particleCount = isMobile ?
-                // Continuing from the previous code...
+<body class="dark-mode">
+  <div id="loading-screen">
+    <div class="loader"></div>
+    <div>Loading 3D Experience...</div>
+  </div>
+  
+  <div class="ui-container">
+    <button id="theme-toggle" class="toggle-btn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="5"></circle>
+        <line x1="12" y1="1" x2="12" y2="3"></line>
+        <line x1="12" y1="21" x2="12" y2="23"></line>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+        <line x1="1" y1="12" x2="3" y2="12"></line>
+        <line x1="21" y1="12" x2="23" y2="12"></line>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+      </svg>
+      Toggle Theme
+    </button>
+  </div>
 
-// Add particle system for visual effect
-const particlesGeometry = new THREE.BufferGeometry();
-const particleCount = isMobile ? 500 : 1500;
-const particlePositions = new Float32Array(particleCount * 3);
+  <div id="instruction" class="instruction dark-mode">
+    Mouse/Touch: Drag to rotate, Scroll/Pinch to zoom
+  </div>
 
-for (let i = 0; i < particleCount * 3; i += 3) {
-    particlePositions[i] = (Math.random() - 0.5) * 10;
-    particlePositions[i + 1] = (Math.random() - 0.5) * 10;
-    particlePositions[i + 2] = (Math.random() - 0.5) * 10;
-}
+  <div id="tooltip" class="tooltip"></div>
 
-particlesGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+  <script>
+    // Global variables
+    let camera, scene, renderer, controls;
+    let objects = [];
+    let darkMode = true;
+    let raycaster, mouse, intersectedObject;
+    let tooltipElement;
+    let currentIntersect = null;
+    let isMobile = window.innerWidth < 768;
+    let isLoading = true;
+    let loadingManager;
 
-const particlesMaterial = new THREE.PointsMaterial({
-    size: 0.05,
-    color: isDarkMode ? 0xffffff : 0x000000,
-    transparent: true,
-    opacity: 0.4
-});
-
-const particleSystem = new THREE.Points(particlesGeometry, particlesMaterial);
-scene.add(particleSystem);
-objects.push({ mesh: particleSystem, rotationSpeed: 0.0001, floatSpeed: 0 });
-}
-
-// -------------------- ANIMATION & INTERACTION --------------------
-
-function animate() {
-    requestAnimationFrame(animate);
+    // Scene colors
+    const darkModeColors = {
+      background: 0x050505,
+      ambient: 0x404040,
+      directional: 0xffffff,
+      geometries: [0x4285f4, 0xea4335, 0x34a853, 0xfbbc05, 0x7B68EE, 0x3498db],
+      particles: 0xffffff
+    };
     
-    // Update controls
-    controls.update();
-    
-    // Update object animations
-    const time = clock.getElapsedTime();
-    
-    if (isAnimating) {
-        objects.forEach((obj, index) => {
-            // Rotate objects
-            obj.mesh.rotation.x += obj.rotationSpeed;
-            obj.mesh.rotation.y += obj.rotationSpeed * 1.5;
-            
-            // Float objects up and down
-            if (obj.floatSpeed > 0) {
-                obj.mesh.position.y = obj.mesh.position.y + Math.sin(time * obj.floatSpeed) * 0.002;
-            }
-            
-            // If it's the particle system, rotate it slowly
-            if (index === objects.length - 1) {
-                obj.mesh.rotation.y += 0.0001;
-            }
-        });
+    const lightModeColors = {
+      background: 0xf5f5f5,
+      ambient: 0x909090,
+      directional: 0xffffff,
+      geometries: [0x4285f4, 0xea4335, 0x34a853, 0xfbbc05, 0x7B68EE, 0x3498db],
+      particles: 0x333333
+    };
+
+    // Initialize scene
+    init();
+    animate();
+
+    function init() {
+      tooltipElement = document.getElementById('tooltip');
+      
+      // Create loading manager
+      loadingManager = new THREE.LoadingManager();
+      loadingManager.onLoad = () => {
+        isLoading = false;
+        document.getElementById('loading-screen').style.opacity = '0';
+        setTimeout(() => {
+          document.getElementById('loading-screen').style.display = 'none';
+        }, 500);
+      };
+
+      // Initialize scene
+      scene = new THREE.Scene();
+      
+      // Initialize camera
+      const aspect = window.innerWidth / window.innerHeight;
+      camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 1000);
+      camera.position.z = 5;
+      
+      // Initialize renderer
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      document.body.appendChild(renderer.domElement);
+      
+      // Initialize raycaster for object interaction
+      raycaster = new THREE.Raycaster();
+      mouse = new THREE.Vector2();
+      
+      // Set up scene based on current theme
+      updateSceneColors();
+      
+      // Add lights
+      addLights();
+      
+      // Add objects
+      addObjects();
+      
+      // Add particles
+      addParticles();
+      
+      // Set up controls
+      setupControls();
+      
+      // Add event listeners
+      addEventListeners();
+      
+      // Animate objects initially
+      animateObjects();
     }
-    
-    // Render scene
-    renderer.render(scene, camera);
-}
 
-// -------------------- EVENT HANDLERS --------------------
+    function addLights() {
+      const ambientLight = new THREE.AmbientLight(darkMode ? darkModeColors.ambient : lightModeColors.ambient);
+      scene.add(ambientLight);
+      
+      const directionalLight = new THREE.DirectionalLight(darkMode ? darkModeColors.directional : lightModeColors.directional, 1);
+      directionalLight.position.set(5, 5, 5);
+      directionalLight.castShadow = true;
+      scene.add(directionalLight);
+      
+      const pointLight = new THREE.PointLight(0x3498db, 2, 10);
+      pointLight.position.set(0, 0, 3);
+      scene.add(pointLight);
+    }
 
-function onWindowResize() {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-}
+    function addObjects() {
+      const colors = darkMode ? darkModeColors.geometries : lightModeColors.geometries;
+      
+      // Add cube
+      const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
+      const cubeMaterial = new THREE.MeshPhongMaterial({ 
+        color: colors[0],
+        shininess: 100
+      });
+      const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+      cube.position.set(-2, 0, 0);
+      cube.castShadow = true;
+      cube.receiveShadow = true;
+      cube.userData = { name: 'Cube', description: 'A simple cube object' };
+      scene.add(cube);
+      objects.push(cube);
+      
+      // Add sphere
+      const sphereGeometry = new THREE.SphereGeometry(0.7, 32, 32);
+      const sphereMaterial = new THREE.MeshPhongMaterial({ 
+        color: colors[1],
+        shininess: 100
+      });
+      const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+      sphere.position.set(0, 0, 0);
+      sphere.castShadow = true;
+      sphere.receiveShadow = true;
+      sphere.userData = { name: 'Sphere', description: 'A smooth sphere with high polygon count' };
+      scene.add(sphere);
+      objects.push(sphere);
+      
+      // Add torus
+      const torusGeometry = new THREE.TorusGeometry(0.5, 0.2, 16, 100);
+      const torusMaterial = new THREE.MeshPhongMaterial({ 
+        color: colors[2],
+        shininess: 100
+      });
+      const torus = new THREE.Mesh(torusGeometry, torusMaterial);
+      torus.position.set(2, 0, 0);
+      torus.castShadow = true;
+      torus.receiveShadow = true;
+      torus.userData = { name: 'Torus', description: 'A ring-shaped object' };
+      scene.add(torus);
+      objects.push(torus);
+      
+      // Add a custom low-poly model (icosahedron)
+      const icosaGeometry = new THREE.IcosahedronGeometry(0.7, 0);
+      const icosaMaterial = new THREE.MeshPhongMaterial({ 
+        color: colors[3],
+        flatShading: true,
+        shininess: 100
+      });
+      const icosahedron = new THREE.Mesh(icosaGeometry, icosaMaterial);
+      icosahedron.position.set(0, -2, 0);
+      icosahedron.castShadow = true;
+      icosahedron.receiveShadow = true;
+      icosahedron.userData = { name: 'Icosahedron', description: 'A low-poly model with 20 faces' };
+      scene.add(icosahedron);
+      objects.push(icosahedron);
+    }
 
-function toggleMode() {
-    isDarkMode = !isDarkMode;
-    
-    // Update body class
-    document.body.classList.toggle('light-mode', !isDarkMode);
-    
-    // Update scene background
-    scene.background = new THREE.Color(isDarkMode ? 0x121212 : 0xf5f5f5);
-    
-    // Update button text
-    toggleModeButton.textContent = isDarkMode ? 'Light Mode' : 'Dark Mode';
-    
-    // Update ground color
-    scene.children.forEach(child => {
-        if (child instanceof THREE.Mesh && child.geometry instanceof THREE.PlaneGeometry) {
-            child.material.color.set(isDarkMode ? 0x222222 : 0xdddddd);
+    function addParticles() {
+      const particleCount = isMobile ? 500 : 1000;
+      const particles = new THREE.BufferGeometry();
+      const positions = new Float32Array(particleCount * 3);
+      
+      for (let i = 0; i < particleCount * 3; i += 3) {
+        positions[i] = (Math.random() - 0.5) * 10;
+        positions[i + 1] = (Math.random() - 0.5) * 10;
+        positions[i + 2] = (Math.random() - 0.5) * 10;
+      }
+      
+      particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      
+      const particleMaterial = new THREE.PointsMaterial({
+        color: darkMode ? darkModeColors.particles : lightModeColors.particles,
+        size: 0.05,
+        transparent: true,
+        opacity: 0.7
+      });
+      
+      const particleSystem = new THREE.Points(particles, particleMaterial);
+      scene.add(particleSystem);
+    }
+
+    function setupControls() {
+      // We'll implement our own simple controls
+      document.addEventListener('mousedown', onMouseDown);
+      document.addEventListener('mouseup', onMouseUp);
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('touchstart', onTouchStart);
+      document.addEventListener('touchend', onTouchEnd);
+      document.addEventListener('touchmove', onTouchMove);
+      document.addEventListener('wheel', onWheel);
+    }
+
+    // Mouse/touch interaction variables
+    let isDragging = false;
+    let previousMousePosition = { x: 0, y: 0 };
+    let rotationSpeed = 0.005;
+    let autoRotate = true;
+
+    function onMouseDown(event) {
+      isDragging = true;
+      previousMousePosition =
+function onMouseDown(event) {
+      isDragging = true;
+      previousMousePosition = {
+        x: event.clientX, 
+        y: event.clientY
+      };
+      autoRotate = false;
+    }
+
+    function onMouseUp() {
+      isDragging = false;
+    }
+
+    function onMouseMove(event) {
+      if (isDragging) {
+        const deltaMove = {
+          x: event.clientX - previousMousePosition.x,
+          y: event.clientY - previousMousePosition.y
+        };
+
+        // Update rotation based on mouse movement
+        rotateScene(deltaMove.x * 0.005, deltaMove.y * 0.005);
+
+        previousMousePosition = {
+          x: event.clientX,
+          y: event.clientY
+        };
+      }
+
+      // Update mouse position for raycaster
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    }
+
+    function onTouchStart(event) {
+      if (event.touches.length === 1) {
+        isDragging = true;
+        previousMousePosition = {
+          x: event.touches[0].clientX,
+          y: event.touches[0].clientY
+        };
+        autoRotate = false;
+      }
+    }
+
+    function onTouchEnd() {
+      isDragging = false;
+    }
+
+    function onTouchMove(event) {
+      if (isDragging && event.touches.length === 1) {
+        const deltaMove = {
+          x: event.touches[0].clientX - previousMousePosition.x,
+          y: event.touches[0].clientY - previousMousePosition.y
+        };
+
+        // Update rotation based on touch movement
+        rotateScene(deltaMove.x * 0.005, deltaMove.y * 0.005);
+
+        previousMousePosition = {
+          x: event.touches[0].clientX,
+          y: event.touches[0].clientY
+        };
+      }
+
+      // Update mouse position for raycaster
+      if (event.touches.length === 1) {
+        mouse.x = (event.touches[0].clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.touches[0].clientY / window.innerHeight) * 2 + 1;
+      }
+    }
+
+    function rotateScene(deltaX, deltaY) {
+      objects.forEach(obj => {
+        obj.rotation.y += deltaX;
+        obj.rotation.x += deltaY;
+      });
+    }
+
+    function onWheel(event) {
+      // Zoom in/out with mouse wheel or pinch
+      event.preventDefault();
+      
+      const zoomSpeed = 0.1;
+      const delta = event.deltaY * 0.001;
+      
+      // Limit how close and far we can zoom
+      if (camera.position.z + delta * zoomSpeed > 2 && camera.position.z + delta * zoomSpeed < 10) {
+        camera.position.z += delta * zoomSpeed;
+      }
+    }
+
+    function addEventListeners() {
+      // Window resize
+      window.addEventListener('resize', onWindowResize);
+      
+      // Theme toggle
+      document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+    }
+
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      
+      // Update mobile detection
+      isMobile = window.innerWidth < 768;
+    }
+
+    function toggleTheme() {
+      darkMode = !darkMode;
+      
+      if (darkMode) {
+        document.body.classList.remove('light-mode');
+        document.body.classList.add('dark-mode');
+        document.getElementById('instruction').classList.remove('light-mode');
+        document.getElementById('instruction').classList.add('dark-mode');
+        tooltipElement.classList.remove('light-mode');
+      } else {
+        document.body.classList.remove('dark-mode');
+        document.body.classList.add('light-mode');
+        document.getElementById('instruction').classList.remove('dark-mode');
+        document.getElementById('instruction').classList.add('light-mode');
+        tooltipElement.classList.add('light-mode');
+      }
+      
+      updateSceneColors();
+    }
+
+    function updateSceneColors() {
+      const colors = darkMode ? darkModeColors : lightModeColors;
+      
+      // Update scene background
+      scene.background = new THREE.Color(colors.background);
+      
+      // Update materials for all objects
+      objects.forEach((obj, index) => {
+        obj.material.color.setHex(colors.geometries[index % colors.geometries.length]);
+      });
+      
+      // Update particle colors
+      scene.children.forEach(child => {
+        if (child instanceof THREE.Points) {
+          child.material.color.setHex(colors.particles);
         }
-    });
-    
-    // Update particle color
-    objects[objects.length - 1].mesh.material.color.set(isDarkMode ? 0xffffff : 0x000000);
-    
-    // Update lights
-    scene.children.forEach(child => {
+      });
+      
+      // Update lights
+      scene.children.forEach(child => {
         if (child instanceof THREE.AmbientLight) {
-            child.intensity = isDarkMode ? 0.5 : 0.7;
+          child.color.setHex(colors.ambient);
+        } else if (child instanceof THREE.DirectionalLight) {
+          child.color.setHex(colors.directional);
         }
-        if (child instanceof THREE.DirectionalLight) {
-            child.intensity = isDarkMode ? 0.7 : 0.5;
-        }
-    });
-}
+      });
+    }
 
-function toggleAnimation() {
-    isAnimating = !isAnimating;
-    toggleAnimationButton.textContent = isAnimating ? 'Pause' : 'Play';
-}
-
-// -------------------- POST-PROCESSING --------------------
-
-function addPostProcessing() {
-    // Skip post-processing on mobile for better performance
-    if (isMobile) return;
-    
-    composer = new THREE.EffectComposer(renderer);
-    
-    const renderPass = new THREE.RenderPass(scene, camera);
-    composer.addPass(renderPass);
-    
-    const bloomPass = new THREE.UnrealBloomPass(
-        new THREE.Vector2(window.innerWidth, window.innerHeight),
-        0.3,  // strength
-        0.5,  // radius
-        0.9   // threshold
-    );
-    composer.addPass(bloomPass);
-}
-
-// -------------------- SHADER HELPERS --------------------
-
-function createCustomShader() {
-    // Create a custom shader for one of the objects if needed
-    // This is just a placeholder for where you might add more complex shaders
-}
-
-// -------------------- INITIALIZATION --------------------
-
-// Add Three.js OrbitControls
-class OrbitControls extends THREE.EventDispatcher {
-    constructor(object, domElement) {
-        super();
+    function animateObjects() {
+      // Initial animations using GSAP
+      objects.forEach((obj, index) => {
+        gsap.from(obj.position, {
+          y: -10,
+          duration: 1.5,
+          delay: index * 0.2,
+          ease: "elastic.out(1, 0.5)"
+        });
         
-        this.object = object;
-        this.domElement = domElement;
-        
-        // Public properties
-        this.enabled = true;
-        this.target = new THREE.Vector3();
-        
-        this.minDistance = 0;
-        this.maxDistance = Infinity;
-        
-        this.minZoom = 0;
-        this.maxZoom = Infinity;
-        
-        this.minPolarAngle = 0;
-        this.maxPolarAngle = Math.PI;
-        
-        this.minAzimuthAngle = -Infinity;
-        this.maxAzimuthAngle = Infinity;
-        
-        this.enableDamping = false;
-        this.dampingFactor = 0.05;
-        
-        this.enableZoom = true;
-        this.zoomSpeed = 1.0;
-        
-        this.enableRotate = true;
-        this.rotateSpeed = 1.0;
-        
-        this.enablePan = true;
-        this.panSpeed = 1.0;
-        this.screenSpacePanning = false;
-        this.keyPanSpeed = 7.0;
-        
-        this.autoRotate = false;
-        this.autoRotateSpeed = 2.0;
-        
-        this.keys = { LEFT: 'ArrowLeft', UP: 'ArrowUp', RIGHT: 'ArrowRight', BOTTOM: 'ArrowDown' };
-        
-        this.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN };
-        
-        this.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
-        
-        // Private properties
-        this._domElementKeyEvents = null;
-        
-        this.target0 = this.target.clone();
-        this.position0 = this.object.position.clone();
-        this.zoom0 = this.object.zoom;
-        
-        // Event bindings
-        this.onContextMenu = this.onContextMenu.bind(this);
-        this.onMouseDown = this.onMouseDown.bind(this);
-        this.onMouseMove = this.onMouseMove.bind(this);
-        this.onMouseUp = this.onMouseUp.bind(this);
-        this.onMouseWheel = this.onMouseWheel.bind(this);
-        this.onTouchStart = this.onTouchStart.bind(this);
-        this.onTouchMove = this.onTouchMove.bind(this);
-        this.onTouchEnd = this.onTouchEnd.bind(this);
-        this.onKeyDown = this.onKeyDown.bind(this);
-        
-        this.domElement.addEventListener('contextmenu', this.onContextMenu);
-        this.domElement.addEventListener('pointerdown', this.onMouseDown);
-        this.domElement.addEventListener('wheel', this.onMouseWheel, { passive: false });
-        this.domElement.addEventListener('touchstart', this.onTouchStart, { passive: false });
-        this.domElement.addEventListener('touchend', this.onTouchEnd);
-        this.domElement.addEventListener('touchmove', this.onTouchMove, { passive: false });
-        
-        this.update = function() {
-            return function update() {
-                const position = this.object.position;
-                
-                // Orbit around target
-                position.sub(this.target);
-                
-                // Rotate position
-                if (this.autoRotate && this.enabled) {
-                    position.applyAxisAngle(new THREE.Vector3(0, 1, 0), 0.01);
-                }
-                
-                // Apply damping
-                if (this.enableDamping) {
-                    position.lerp(this.target, this.dampingFactor);
-                }
-                
-                position.add(this.target);
-                
-                this.object.lookAt(this.target);
-                
-                return true;
-            };
-        }();
+        gsap.from(obj.scale, {
+          x: 0,
+          y: 0,
+          z: 0,
+          duration: 1.5,
+          delay: index * 0.2,
+          ease: "back.out(1.7)"
+        });
+      });
     }
-    
-    // Event handlers
-    onContextMenu(event) {
-        if (this.enabled === false) return;
-        event.preventDefault();
-    }
-    
-    onMouseDown(event) {
-        if (this.enabled === false) return;
+
+    function checkIntersection() {
+      // Update the picking ray with the camera and mouse position
+      raycaster.setFromCamera(mouse, camera);
+      
+      // Calculate objects intersecting the picking ray
+      const intersects = raycaster.intersectObjects(objects);
+      
+      if (intersects.length > 0) {
+        const intersectedObj = intersects[0].object;
         
-        switch (event.button) {
-            case 0: // Left mouse button
-                this.rotateStart();
-                break;
-            case 1: // Middle mouse button
-                this.zoomStart();
-                break;
-            case 2: // Right mouse button
-                this.panStart();
-                break;
+        if (currentIntersect !== intersectedObj) {
+          // Mouse entered new object
+          currentIntersect = intersectedObj;
+          
+          if (intersectedObj.userData && intersectedObj.userData.name) {
+            // Show tooltip
+            tooltipElement.textContent = intersectedObj.userData.name;
+            tooltipElement.style.opacity = '1';
+            
+            // Slightly enlarge the object
+            gsap.to(intersectedObj.scale, {
+              x: 1.1,
+              y: 1.1,
+              z: 1.1,
+              duration: 0.3,
+              ease: "power2.out"
+            });
+          }
         }
         
-        document.addEventListener('pointermove', this.onMouseMove);
-        document.addEventListener('pointerup', this.onMouseUp);
-    }
-    
-    onMouseMove(event) {
-        if (this.enabled === false) return;
+        // Update tooltip position
+        const tooltipX = (mouse.x + 1) / 2 * window.innerWidth;
+        const tooltipY = (1 - (mouse.y + 1) / 2) * window.innerHeight;
         
-        event.preventDefault();
+        tooltipElement.style.left = `${tooltipX + 15}px`;
+        tooltipElement.style.top = `${tooltipY - 15}px`;
         
-        // Implementation would handle rotation, zooming, and panning
-    }
-    
-    onMouseUp() {
-        document.removeEventListener('pointermove', this.onMouseMove);
-        document.removeEventListener('pointerup', this.onMouseUp);
-    }
-    
-    onMouseWheel(event) {
-        if (this.enabled === false || this.enableZoom === false) return;
+      } else if (currentIntersect) {
+        // Mouse left an object
+        gsap.to(currentIntersect.scale, {
+          x: 1,
+          y: 1,
+          z: 1,
+          duration: 0.3,
+          ease: "power2.out"
+        });
         
-        event.preventDefault();
-        
-        if (event.deltaY < 0) {
-            this.dollyIn(1.1);
-        } else {
-            this.dollyOut(1.1);
-        }
-        
-        this.update();
+        tooltipElement.style.opacity = '0';
+        currentIntersect = null;
+      }
     }
-    
-    onTouchStart(event) {
-        if (this.enabled === false) return;
-        
-        event.preventDefault();
-        
-        if (event.touches.length === 1) {
-            // Single touch: rotate
-            this.rotateStart();
-        } else if (event.touches.length === 2) {
-            // Two touches: dolly-pan
-            this.zoomStart();
-            this.panStart();
-        }
-    }
-    
-    onTouchMove(event) {
-        if (this.enabled === false) return;
-        
-        event.preventDefault();
-        
-        if (event.touches.length === 1) {
-            // Single touch: rotate
-            this.rotateMove();
-        } else if (event.touches.length === 2) {
-            // Two touches: dolly-pan
-            this.zoomMove();
-            this.panMove();
-        }
-        
-        this.update();
-    }
-    
-    onTouchEnd() {
-        // Touch end handling
-    }
-    
-    onKeyDown(event) {
-        if (this.enabled === false || this.enablePan === false) return;
-        
-        // Handle key panning
-        switch (event.code) {
-            case this.keys.LEFT:
-                this.pan(0.05, 0);
-                break;
-            case this.keys.RIGHT:
-                this.pan(-0.05, 0);
-                break;
-            case this.keys.UP:
-                this.pan(0, 0.05);
-                break;
-            case this.keys.BOTTOM:
-                this.pan(0, -0.05);
-                break;
-        }
-        
-        this.update();
-    }
-    
-    // Rotation, zooming, and panning methods
-    rotateStart() {
-        // Implement rotation start
-    }
-    
-    zoomStart() {
-        // Implement zoom start
-    }
-    
-    panStart() {
-        // Implement pan start
-    }
-    
-    rotateMove() {
-        // Implement rotation movement
-    }
-    
-    zoomMove() {
-        // Implement zoom movement
-    }
-    
-    panMove() {
-        // Implement pan movement
-    }
-    
-    dollyIn(dollyScale) {
-        if (this.object.isPerspectiveCamera) {
-            this.object.position.multiplyScalar(dollyScale);
-        } else if (this.object.isOrthographicCamera) {
-            this.object.zoom *= dollyScale;
-            this.object.updateProjectionMatrix();
-        }
-    }
-    
-    dollyOut(dollyScale) {
-        if (this.object.isPerspectiveCamera) {
-            this.object.position.multiplyScalar(1 / dollyScale);
-        } else if (this.object.isOrthographicCamera) {
-            this.object.zoom /= dollyScale;
-            this.object.updateProjectionMatrix();
-        }
-    }
-    
-    pan(deltaX, deltaY) {
-        // Implement panning
-    }
-    
-    dispose() {
-        this.domElement.removeEventListener('contextmenu', this.onContextMenu);
-        this.domElement.removeEventListener('pointerdown', this.onMouseDown);
-        this.domElement.removeEventListener('wheel', this.onMouseWheel);
-        this.domElement.removeEventListener('touchstart', this.onTouchStart);
-        this.domElement.removeEventListener('touchend', this.onTouchEnd);
-        this.domElement.removeEventListener('touchmove', this.onTouchMove);
-        
-        document.removeEventListener('pointermove', this.onMouseMove);
-        document.removeEventListener('pointerup', this.onMouseUp);
-        
-        if (this._domElementKeyEvents !== null) {
-            this._domElementKeyEvents.removeEventListener('keydown', this.onKeyDown);
-        }
-    }
-}
 
-// Assign the OrbitControls to THREE namespace
-THREE.OrbitControls = OrbitControls;
+    function animate() {
+      requestAnimationFrame(animate);
+      
+      // Auto-rotate objects when not being dragged
+      if (autoRotate) {
+        objects.forEach(obj => {
+          obj.rotation.y += 0.005;
+          obj.rotation.x += 0.002;
+        });
+      }
+      
+      // Check for object interaction
+      checkIntersection();
+      
+      // Render scene
+      renderer.render(scene, camera);
+    }
 
-// Initialize the scene
-init();
+    // Add post-processing effects
+    // Note: To keep performance high across devices, we're using minimal post-processing
+    function setupPostProcessing() {
+      // This would be implemented with THREE.EffectComposer for more advanced effects
+      // For simplicity and performance, we're keeping rendering basic
+    }
+
+    // Function to load low-poly models (for real applications)
+    function loadModels() {
+      // Using THREE.GLTFLoader to load optimized 3D models
+      // This would replace the geometric primitives for a real application
+    }
+  </script>
+</body>
+</html>
